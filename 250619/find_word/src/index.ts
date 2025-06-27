@@ -11,69 +11,66 @@ function parse(_path: string) {
 }
 
 const targetInput: '3m' | '1m' | 'test' = 'test';
+const words = parse(`../input/${targetInput}.csv`).slice(1);
 
-let jsonInput = undefined;
-let selectedWordMap: { [key in string]: string[] } = {};
+class Node {
+	children: Map<string, Node> = new Map();
+	count: number = 0;
+}
 
-try {
-	jsonInput = fs.readFileSync(path.join(__dirname, `../input/${targetInput}.json`), 'utf-8');
-} catch (e) {}
+class Root {
+	private root: Node = new Node();
 
-if (!jsonInput) {
-	const words = parse(`../input/${targetInput}.csv`).slice(1);
-	const wordMap: { [key in string]: { [key in string]: number } } = {};
+	insert(word: string) {
+		let node = this.root;
 
-	for (let i = 0; i < words.length; i++) {
-		const word = words[i];
-
-		for (let j = 1; j < word.length + 1; j++) {
-			const prefix = word.slice(0, j);
-
-			!wordMap[prefix] && (wordMap[prefix] = { [word]: 0 });
-			!wordMap[prefix][word] && (wordMap[prefix][word] = 0);
-
-			wordMap[prefix][word] += 1;
+		for (const char of word) {
+			const child = node.children.get(char);
+			if (!child) {
+				node.children.set(char, new Node());
+			} else {
+				node = child;
+			}
 		}
+		node.count += 1;
 	}
 
-	Object.entries(wordMap).forEach(([key, value]) => {
-		const sortedValue = Object.entries(value)
-			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-			.map((v) => v[0]);
-		selectedWordMap[key] = sortedValue.slice(0, 10);
-	});
+	find(prefix: string): string[] {
+		return [];
+	}
 
-	fs.writeFileSync(path.join(__dirname, `../input/${targetInput}.json`), JSON.stringify(wordMap));
-} else {
-	selectedWordMap = JSON.parse(jsonInput);
+	getWords(prefix: string): string[] {
+		const result: { word: string; count: number }[] = [];
+		const prefixNode = this.find(prefix);
+		if (!prefixNode) return [];
+
+		return result
+			.sort((a, b) => b.count - a.count || a.word.localeCompare(b.word))
+			.slice(0, 10)
+			.map((e) => e.word);
+	}
+}
+
+const root = new Root();
+for (const word of words) {
+	root.insert(word);
 }
 
 const queries = parse('../input/queries.csv').slice(1);
 
-// ----------------------------------------
-// findWord 함수를 호출하여 결과를 출력함.
-// queries.csv 와 연결할 필요 있음.
-// console.log(findWord('WORDHERE'));
-// ----------------------------------------
-
-// ----------------------------------------
-// Function to find words that start with a given prefix
 function findWord(prefix: string): {
 	duration: number;
 	result: string[];
 } {
 	const startTime = performance.now();
-	const result: string[] = [];
 
-	const word = selectedWordMap[prefix] || [];
-	result.push(...word);
+	const result = root.getWords(prefix);
 
 	const duration = performance.now() - startTime;
-
-	return {
-		duration,
-		result,
-	};
+	return { duration, result: result.length ? result : ['없음'] };
 }
 
-queries.forEach((prefix) => console.log(findWord(prefix)));
+for (const q of queries) {
+	const { duration, result } = findWord(q);
+	console.log(duration, result);
+}
