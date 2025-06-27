@@ -1,14 +1,29 @@
 import fs from 'fs';
 import path from 'path';
-
-function execute() {
-	const data = fs.readFileSync(path.join(__dirname, '../map/maze_10x10.txt'));
+const mazeArr = [
+	'10x10',
+	'100x100_1',
+	'100x100_2',
+	'100x100_3',
+	'300x300_1',
+	'300x300_2',
+	'300x300_3',
+	'300x300_4',
+	'300x300_5',
+	'1000x1000_1',
+	'1000x1000_2',
+];
+function execute(maze: string) {
+	const data = fs.readFileSync(path.join(__dirname, `../map/maze_${maze}.txt`));
 	const map = data.toString();
 	const startTime = performance.now();
 	const result = findPath(map);
 	const duration = performance.now() - startTime;
+
+	console.log(`[${maze}]`);
 	console.log(`Duration: ${duration} ms`);
 	console.log(`Result: ${result}`);
+	console.log(`\n`);
 }
 function findPath(map: any): string {
 	const maps = (map.split('\n') as string[])
@@ -73,4 +88,4 @@ function findPath(map: any): string {
 	return leastCount === -1 ? 'NO' : String(leastCount);
 }
 
-execute();
+mazeArr.forEach((maze) => execute(maze));
