@@ -8,7 +8,7 @@ export class Input {
 
 	public async on(): Promise<string> {
 		return new Promise((resolve, reject) => {
-			this.rl.on('line', (line: string) => {
+			this.rl.once('line', (line: string) => {
 				resolve(line);
 				// this.rl.close();
 			});
